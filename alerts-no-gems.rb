@@ -56,7 +56,7 @@ class GitHub
 
     query = <<-GRAPHQL
       query {
-        organization(login: dxw) {
+        organization(login: \"dxw\") {
           repositories(isFork:false #{pagination_params}) {
             pageInfo {
               startCursor
