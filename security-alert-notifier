@@ -57,18 +57,22 @@ class GitHub
     cursor = nil
     repos = []
 
-    loop do
-      result = fetch_repositories(cursor: cursor)
-      repos << result.repos
-      cursor = result.cursor
-      break unless result.more?
-    end
+      uri = URI(BASE_URI)
+
+      res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+        loop do
+          result = fetch_repositories(cursor: cursor, http: http)
+          repos << result.repos
+          cursor = result.cursor
+          break unless result.more?
+        end
+      end
 
     repos.flatten!
   end
 
-  def fetch_repositories(cursor: nil)
-    pagination_params = 'first: 25'
+  def fetch_repositories(cursor: nil, http:)
+    pagination_params = 'first: 100'
     pagination_params += "after: \"#{cursor}\"" if cursor
 
     query = <<-GRAPHQL
@@ -82,7 +86,7 @@ class GitHub
             }
             nodes {
               nameWithOwner
-              vulnerabilityAlerts(first: 10) {
+              vulnerabilityAlerts(first: 100) {
                 nodes {
                   packageName
                   affectedRange
@@ -106,9 +110,9 @@ class GitHub
     req['Authorization'] = "Bearer #{GITHUB_OAUTH_TOKEN}"
     req['Accept']        = 'application/vnd.github.vixen-preview+json'
 
-    res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
-      http.request(req)
-    end
+    res = http.request(req)
+
+    puts res.body
 
     res.value
 
