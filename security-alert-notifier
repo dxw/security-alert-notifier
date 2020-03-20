@@ -78,7 +78,7 @@ class GitHub
     query = <<-GRAPHQL
       query {
         organization(login: \"#{ORGANIZATION_NAME}\") {
-          repositories(isFork:false #{pagination_params}) {
+          repositories(#{pagination_params}) {
             pageInfo {
               startCursor
               endCursor
