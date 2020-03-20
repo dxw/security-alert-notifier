@@ -1,35 +1,53 @@
+#!/usr/bin/env ruby
+
 require 'net/http'
 require 'open-uri'
 require 'json'
 
+USAGE = '`check_github_vulnerabilities.rb <access_token> <organization_name>`'.freeze
+
 if ARGV[0].nil?
-  puts 'Missing GitHub personal access token - usage: `ruby check_github_vulnerabilities.rb <access_token>`'
+  puts "UNKNOWN: Missing GitHub personal access token - usage: #{USAGE}"
   exit 3
-else
-  GITHUB_OAUTH_TOKEN = ARGV[0].freeze
 end
+
+if ARGV[1].nil?
+  puts "UNKNOWN: Missing GitHub organization name - usage: #{USAGE}"
+  exit 3
+end
+
+GITHUB_OAUTH_TOKEN = ARGV[0].freeze
+ORGANIZATION_NAME = ARGV[1].freeze
 
 class GitHub
   Result = Struct.new(:repos, :cursor, :more?)
+  Repo = Struct.new(:url, :alerts)
+  Alert = Struct.new(:package_name, :affected_range, :fixed_in, :details)
 
   BASE_URI = 'https://api.github.com/graphql'.freeze
 
-  def vulnerabilities
+  def vulnerable_repos
+    @vulnerable_repos ||= fetch_vulnerable_repos
+  end
+
+  def fetch_vulnerable_repos
     vulnerable_repos = repositories.select do |repo|
       next if repo['vulnerabilityAlerts']['nodes'].empty?
 
       repo['vulnerabilityAlerts']['nodes'].detect { |v| v['dismissedAt'].nil? }
     end
 
-    vulnerable_repos.each do |repo|
-      puts "https://github.com/#{repo['nameWithOwner']}"
-
-      repo['vulnerabilityAlerts']['nodes'].each do |alert|
-        puts "  #{alert['packageName']} (#{alert['affectedRange']})"
-        puts "  Fixed in: #{alert['fixedIn']}"
-        puts "  Details: #{alert['externalReference']}"
-        puts
+    vulnerable_repos.map do |repo|
+      alerts = repo['vulnerabilityAlerts']['nodes'].map do |alert|
+        Alert.new(alert['packageName'],
+                  alert['affectedRange'],
+                  alert['fixedIn'],
+                  alert['externalReference'])
       end
+
+      url = "https://github.com/#{repo['nameWithOwner']}"
+
+      Repo.new(url, alerts)
     end
   end
 
@@ -49,14 +67,13 @@ class GitHub
     repos.flatten!
   end
 
-
   def fetch_repositories(cursor: nil)
     pagination_params = 'first: 25'
     pagination_params += "after: \"#{cursor}\"" if cursor
 
     query = <<-GRAPHQL
       query {
-        organization(login: \"dxw\") {
+        organization(login: \"#{ORGANIZATION_NAME}\") {
           repositories(isFork:false #{pagination_params}) {
             pageInfo {
               startCursor
@@ -93,6 +110,8 @@ class GitHub
       http.request(req)
     end
 
+    res.value
+
     body = JSON.parse(res.body)['data']['organization']['repositories']
 
     Result.new(
@@ -103,5 +122,30 @@ class GitHub
   end
 end
 
-GitHub.new.vulnerabilities
+begin
+  github = GitHub.new
 
+  if github.vulnerable_repos.any?
+    total_vulnerabilities = github.vulnerable_repos.sum { |repo| repo.alerts.length }
+    puts "WARNING: #{total_vulnerabilities} vulnerabilities in #{github.vulnerable_repos.length} repos"
+
+    github.vulnerable_repos.each do |repo|
+      puts repo.url
+
+      repo.alerts.each do |alert|
+        puts "  #{alert.package_name} (#{alert.affected_range})"
+        puts "  Fixed in: #{alert.fixed_in}"
+        puts "  Details: #{alert.details}"
+        puts
+      end
+    end
+
+    exit 1
+  else
+    puts "OK: No vulnerabilities"
+    exit 0
+  end
+rescue => e
+  puts "UNKNOWN: #{e.to_s}\n#{e.full_message}"
+  exit 3
+end
