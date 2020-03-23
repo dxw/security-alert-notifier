@@ -150,6 +150,6 @@ begin
     exit 0
   end
 rescue => e
-  puts "UNKNOWN: #{e.to_s}\n#{e.full_message}"
+  puts "UNKNOWN: #{e}\n#{e.full_message}"
   exit 3
 end
