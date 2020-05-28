@@ -59,10 +59,10 @@ class GitHub
 
     vulnerable_repos.map do |repo|
       alerts = repo['vulnerabilityAlerts']['nodes'].map do |alert|
-        Alert.new(alert['packageName'],
-                  alert['affectedRange'],
-                  alert['fixedIn'],
-                  alert['externalReference'])
+        Alert.new(alert['securityVulnerability']['package']['name'],
+                  alert['securityVulnerability']['vulnerableVersionRange'],
+                  alert['securityVulnerability']['firstPatchedVersion']['identifier'],
+                  alert['securityAdvisory']['summary'])
       end
 
       url = "https://github.com/#{repo['nameWithOwner']}"
@@ -108,11 +108,19 @@ class GitHub
               nameWithOwner
               vulnerabilityAlerts(first: 100) {
                 nodes {
-                  packageName
-                  affectedRange
-                  externalReference
-                  fixedIn
                   dismissedAt
+                  securityAdvisory {
+                    summary
+                  }
+                  securityVulnerability {
+                    firstPatchedVersion {
+                      identifier
+                    }
+                    package {
+                      name
+                    }
+                    vulnerableVersionRange
+                  }
                 }
               }
             }
