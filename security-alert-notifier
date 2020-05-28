@@ -140,8 +140,6 @@ class GitHub
 
     res = http.request(req)
 
-    puts res.body
-
     res.value
 
     body = JSON.parse(res.body)['data']['organization']['repositories']
