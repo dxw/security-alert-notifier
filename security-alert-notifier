@@ -27,12 +27,12 @@ end
 parser.parse!
 
 if options[:token].nil?
-  puts "UNKNOWN: Missing GitHub personal access token - usage: #{opts}"
+  puts "UNKNOWN: Missing GitHub personal access token - usage: #{parseri.help}"
   exit 3
 end
 
 if options[:organization].nil?
-  puts "UNKNOWN: Missing GitHub organization name - usage: #{opts}"
+  puts "UNKNOWN: Missing GitHub organization name - usage: #{parser.help}"
   exit 3
 end
 
