@@ -41,19 +41,22 @@ class GitHub
 
       repo['vulnerabilityAlerts']['nodes'].detect { |v| v['dismissedAt'].nil? }
     end
+    build_repository_alerts(vulnerable_repos) if vulnerable_repos.any?
+  end
 
-    vulnerable_repos.map do |repo|
-      alerts = repo['vulnerabilityAlerts']['nodes'].map do |alert|
-        Alert.new(alert['securityVulnerability']['package']['name'],
-                  alert['securityVulnerability']['vulnerableVersionRange'],
-                  alert['securityVulnerability']['firstPatchedVersion']['identifier'],
-                  alert['securityAdvisory']['summary'])
+  def build_repository_alerts(vulnerable_repos)
+      vulnerable_repos.map do |repo|
+        alerts = repo.dig("vulnerabilityAlerts", "nodes").map do |alert|
+          Alert.new(alert.dig("securityVulnerability", "package", "name"),
+                    alert.dig("securityVulnerability", "vulnerableVersionRange"),
+                    alert.dig("securityVulnerability", "firstPatchedVersion", "identifier"),
+                    alert.dig("securityAdvisory", "summary"))
+        end
+
+        url = "https://github.com/#{repo['nameWithOwner']}"
+
+        Repo.new(url, alerts)
       end
-
-      url = "https://github.com/#{repo['nameWithOwner']}"
-
-      Repo.new(url, alerts)
-    end
   end
 
   private
