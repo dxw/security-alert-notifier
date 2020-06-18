@@ -19,6 +19,6 @@ plugin](https://icinga.com/docs/icinga2/latest/doc/05-service-monitoring/#plugin
 
 Basic tests can be run with
 
-````bash
+```bash
 ruby security-alert-notifier_test.rb
 ```
