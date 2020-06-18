@@ -24,21 +24,6 @@ parser = OptionParser.new do |opts|
   end
 end
 
-parser.parse!
-
-if options[:token].nil?
-  puts "UNKNOWN: Missing GitHub personal access token - usage: #{opts}"
-  exit 3
-end
-
-if options[:organization].nil?
-  puts "UNKNOWN: Missing GitHub organization name - usage: #{opts}"
-  exit 3
-end
-
-ORGANIZATION_NAME = options[:organization].freeze
-GITHUB_OAUTH_TOKEN = options[:token].freeze
-
 class GitHub
   Result = Struct.new(:repos, :cursor, :more?)
   Repo = Struct.new(:url, :alerts)
@@ -56,19 +41,22 @@ class GitHub
 
       repo['vulnerabilityAlerts']['nodes'].detect { |v| v['dismissedAt'].nil? }
     end
+    build_repository_alerts(vulnerable_repos) if vulnerable_repos.any?
+  end
 
-    vulnerable_repos.map do |repo|
-      alerts = repo['vulnerabilityAlerts']['nodes'].map do |alert|
-        Alert.new(alert['securityVulnerability']['package']['name'],
-                  alert['securityVulnerability']['vulnerableVersionRange'],
-                  alert['securityVulnerability']['firstPatchedVersion']['identifier'],
-                  alert['securityAdvisory']['summary'])
+  def build_repository_alerts(vulnerable_repos)
+      vulnerable_repos.map do |repo|
+        alerts = repo.dig("vulnerabilityAlerts", "nodes").map do |alert|
+          Alert.new(alert.dig("securityVulnerability", "package", "name"),
+                    alert.dig("securityVulnerability", "vulnerableVersionRange"),
+                    alert.dig("securityVulnerability", "firstPatchedVersion", "identifier"),
+                    alert.dig("securityAdvisory", "summary"))
+        end
+
+        url = "https://github.com/#{repo['nameWithOwner']}"
+
+        Repo.new(url, alerts)
       end
-
-      url = "https://github.com/#{repo['nameWithOwner']}"
-
-      Repo.new(url, alerts)
-    end
   end
 
   private
@@ -152,30 +140,47 @@ class GitHub
   end
 end
 
-begin
-  github = GitHub.new
+if $PROGRAM_NAME == __FILE__
+  parser.parse!
 
-  if github.vulnerable_repos.any?
-    total_vulnerabilities = github.vulnerable_repos.sum { |repo| repo.alerts.length }
-    puts "WARNING: #{total_vulnerabilities} vulnerabilities in #{github.vulnerable_repos.length} repos"
-
-    github.vulnerable_repos.each do |repo|
-      puts repo.url
-
-      repo.alerts.each do |alert|
-        puts "  #{alert.package_name} (#{alert.affected_range})"
-        puts "  Fixed in: #{alert.fixed_in}"
-        puts "  Details: #{alert.details}"
-        puts
-      end
-    end
-
-    exit 1
-  else
-    puts "OK: No vulnerabilities"
-    exit 0
+  if options[:token].nil?
+    puts "UNKNOWN: Missing GitHub personal access token - usage: #{parser.help}"
+    exit 3
   end
-rescue => e
-  puts "UNKNOWN: #{e}\n#{e.full_message}"
-  exit 3
+
+  if options[:organization].nil?
+    puts "UNKNOWN: Missing GitHub organization name - usage: #{parser.help}"
+    exit 3
+  end
+
+  ORGANIZATION_NAME = options[:organization].freeze
+  GITHUB_OAUTH_TOKEN = options[:token].freeze
+
+  begin
+    github = GitHub.new
+
+    if github.vulnerable_repos.any?
+      total_vulnerabilities = github.vulnerable_repos.sum { |repo| repo.alerts.length }
+      puts "WARNING: #{total_vulnerabilities} vulnerabilities in #{github.vulnerable_repos.length} repos"
+
+      github.vulnerable_repos.each do |repo|
+        puts repo.url
+
+        repo.alerts.each do |alert|
+          puts "  #{alert.package_name} (#{alert.affected_range})"
+          puts "  Fixed in: #{alert.fixed_in}"
+          puts "  Details: #{alert.details}"
+          puts
+        end
+      end
+
+      exit 1
+    else
+      puts "OK: No vulnerabilities"
+      exit 0
+    end
+  rescue => e
+    puts "UNKNOWN: #{e}\n#{e.full_message}"
+    exit 3
+  end
 end
