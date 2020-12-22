@@ -37,8 +37,8 @@ class GitHub
 
   def fetch_vulnerable_repos(repositories)
     vulnerable_repos = repositories.select do |repo|
-      next if repo.dig('repositoryTopics', 'nodes').select{|node| node['topic'].has_value?("govpress")}.any?
-      next if repo.dig('vulnerabilityAlerts', 'nodes').empty?
+      next if has_govpress_topic?(repo.dig('repositoryTopics', 'nodes'))
+      next if has_no_vulnerabilityAlerts?(repo.dig('vulnerabilityAlerts', 'nodes'))
 
       repo['vulnerabilityAlerts']['nodes'].detect { |v| v['dismissedAt'].nil? }
     end
@@ -61,6 +61,15 @@ class GitHub
   end
 
   private
+
+  def has_govpress_topic?(topics)
+    return false if topics.empty?
+    topics.select{|node| node['topic'].has_value?("govpress")}.any?
+  end
+
+  def has_no_vulnerabilityAlerts?(alerts)
+    return alerts.empty?
+  end
 
   def repositories
     cursor = nil
