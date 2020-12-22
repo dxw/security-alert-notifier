@@ -1,0 +1,14 @@
+name: CI
+on: [push]
+jobs:
+  lint:
+    name: Lint with standardrb
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 2.5.x
+      - run: gem install bundler
+      - run: bundle install
+      - run: bundle exec standardrb
