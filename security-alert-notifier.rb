@@ -1,14 +1,14 @@
 #!/usr/bin/env ruby
 
-require 'optparse'
-require 'net/http'
-require 'open-uri'
-require 'json'
+require "optparse"
+require "net/http"
+require "open-uri"
+require "json"
 
 options = {}
 
-parser = OptionParser.new do |opts|
-  opts.banner = 'check_github_vulnerabilities.rb [options]'
+parser = OptionParser.new { |opts|
+  opts.banner = "check_github_vulnerabilities.rb [options]"
 
   opts.on("-o", "--organization NAME", "The name of the GitHub organization") do |o|
     options[:organization] = o
@@ -22,75 +22,75 @@ parser = OptionParser.new do |opts|
     puts opts
     exit
   end
-end
+}
 
 class GitHub
   Result = Struct.new(:repos, :cursor, :more?)
   Repo = Struct.new(:url, :alerts)
   Alert = Struct.new(:package_name, :affected_range, :fixed_in, :details)
 
-  BASE_URI = 'https://api.github.com/graphql'.freeze
+  BASE_URI = "https://api.github.com/graphql".freeze
 
   def vulnerable_repos
     @vulnerable_repos ||= fetch_vulnerable_repos(repositories)
   end
 
   def fetch_vulnerable_repos(repositories)
-    vulnerable_repos = repositories.select do |repo|
-      next if has_govpress_topic?(repo.dig('repositoryTopics', 'nodes'))
-      next if has_no_vulnerabilityAlerts?(repo.dig('vulnerabilityAlerts', 'nodes'))
+    vulnerable_repos = repositories.select { |repo|
+      next if has_govpress_topic?(repo.dig("repositoryTopics", "nodes"))
+      next if has_no_vulnerabilityAlerts?(repo.dig("vulnerabilityAlerts", "nodes"))
 
-      repo['vulnerabilityAlerts']['nodes'].detect { |v| v['dismissedAt'].nil? }
-    end
+      repo["vulnerabilityAlerts"]["nodes"].detect { |v| v["dismissedAt"].nil? }
+    }
     build_repository_alerts(vulnerable_repos) if vulnerable_repos.any?
   end
 
   def build_repository_alerts(vulnerable_repos)
-      vulnerable_repos.map do |repo|
-        alerts = repo.dig("vulnerabilityAlerts", "nodes").map do |alert|
-          Alert.new(alert.dig("securityVulnerability", "package", "name"),
-                    alert.dig("securityVulnerability", "vulnerableVersionRange"),
-                    alert.dig("securityVulnerability", "firstPatchedVersion", "identifier"),
-                    alert.dig("securityAdvisory", "summary"))
-        end
+    vulnerable_repos.map do |repo|
+      alerts = repo.dig("vulnerabilityAlerts", "nodes").map { |alert|
+        Alert.new(alert.dig("securityVulnerability", "package", "name"),
+          alert.dig("securityVulnerability", "vulnerableVersionRange"),
+          alert.dig("securityVulnerability", "firstPatchedVersion", "identifier"),
+          alert.dig("securityAdvisory", "summary"))
+      }
 
-        url = "https://github.com/#{repo['nameWithOwner']}"
+      url = "https://github.com/#{repo["nameWithOwner"]}"
 
-        Repo.new(url, alerts)
-      end
+      Repo.new(url, alerts)
+    end
   end
 
   private
 
   def has_govpress_topic?(topics)
     return false if topics.empty?
-    topics.select{|node| node['topic'].has_value?("govpress")}.any?
+    topics.select { |node| node["topic"].has_value?("govpress") }.any?
   end
 
   def has_no_vulnerabilityAlerts?(alerts)
-    return alerts.empty?
+    alerts.empty?
   end
 
   def repositories
     cursor = nil
     repos = []
 
-      uri = URI(BASE_URI)
+    uri = URI(BASE_URI)
 
-      res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
-        loop do
-          result = fetch_repositories(cursor: cursor, http: http)
-          repos << result.repos
-          cursor = result.cursor
-          break unless result.more?
-        end
+    res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
+      loop do
+        result = fetch_repositories(cursor: cursor, http: http)
+        repos << result.repos
+        cursor = result.cursor
+        break unless result.more?
       end
+    }
 
     repos.flatten!
   end
 
-  def fetch_repositories(cursor: nil, http:)
-    pagination_params = 'first: 100'
+  def fetch_repositories(http:, cursor: nil)
+    pagination_params = "first: 100"
     pagination_params += "after: \"#{cursor}\"" if cursor
 
     query = <<-GRAPHQL
@@ -138,21 +138,21 @@ class GitHub
 
     uri = URI(BASE_URI)
 
-    req                  = Net::HTTP::Post.new(uri)
-    req.body             = json
-    req['Authorization'] = "Bearer #{GITHUB_OAUTH_TOKEN}"
-    req['Accept']        = 'application/vnd.github.vixen-preview+json'
+    req = Net::HTTP::Post.new(uri)
+    req.body = json
+    req["Authorization"] = "Bearer #{GITHUB_OAUTH_TOKEN}"
+    req["Accept"] = "application/vnd.github.vixen-preview+json"
 
     res = http.request(req)
 
     res.value
 
-    body = JSON.parse(res.body)['data']['organization']['repositories']
+    body = JSON.parse(res.body)["data"]["organization"]["repositories"]
 
     Result.new(
-      body['nodes'],
-      body['pageInfo']['endCursor'],
-      body['pageInfo']['hasNextPage']
+      body["nodes"],
+      body["pageInfo"]["endCursor"],
+      body["pageInfo"]["hasNextPage"]
     )
   end
 end
