@@ -32,10 +32,10 @@ class GitHub
   BASE_URI = 'https://api.github.com/graphql'.freeze
 
   def vulnerable_repos
-    @vulnerable_repos ||= fetch_vulnerable_repos
+    @vulnerable_repos ||= fetch_vulnerable_repos(repositories)
   end
 
-  def fetch_vulnerable_repos
+  def fetch_vulnerable_repos(repositories)
     vulnerable_repos = repositories.select do |repo|
       next if repo['vulnerabilityAlerts']['nodes'].empty?
 
