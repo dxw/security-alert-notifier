@@ -77,7 +77,7 @@ class GitHub
 
     uri = URI(BASE_URI)
 
-    res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
+    _res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
       loop do
         result = fetch_repositories(cursor: cursor, http: http)
         repos << result.repos
