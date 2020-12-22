@@ -2,7 +2,6 @@ require "minitest/autorun"
 require_relative "security-alert-notifier"
 
 describe GitHub do
-
   describe "when the repository has no topics" do
     it "is included in the list" do
       github = GitHub.new
@@ -30,14 +29,14 @@ describe GitHub do
   describe "when a vulnerability alert does not have the attribute" do
     it "does not blow up" do
       github = GitHub.new
-      vulnerable_repos = [{ "vulnerabilityAlerts" => { "nodes" => [securityVulnerability_with_missing_attribute] }}]
+      vulnerable_repos = [{"vulnerabilityAlerts" => {"nodes" => [securityVulnerability_with_missing_attribute]}}]
       result = github.build_repository_alerts(vulnerable_repos)
       _(result.first).must_be_instance_of GitHub::Repo
     end
 
     it "return nil in the alert for the missin attribute" do
       github = GitHub.new
-      vulnerable_repos = [{ "vulnerabilityAlerts" => { "nodes" => [securityVulnerability_with_missing_attribute] }}]
+      vulnerable_repos = [{"vulnerabilityAlerts" => {"nodes" => [securityVulnerability_with_missing_attribute]}}]
       result = github.build_repository_alerts(vulnerable_repos).first.alerts.first
       _(result.details).must_be_nil
     end
@@ -46,7 +45,7 @@ describe GitHub do
   describe "when the vulnerability is well formed" do
     it "a valid alert" do
       github = GitHub.new
-      vulnerable_repos = [{ "vulnerabilityAlerts" => { "nodes" => [valid_securityVulnerability] }}]
+      vulnerable_repos = [{"vulnerabilityAlerts" => {"nodes" => [valid_securityVulnerability]}}]
       result = github.build_repository_alerts(vulnerable_repos).first.alerts.first
       _(result.package_name).must_equal "Package Name"
       _(result.affected_range).must_equal "A range of things"
@@ -56,12 +55,11 @@ describe GitHub do
   end
 end
 
-
 def repo_with_no_topics
   {
     "nameWithOwner" => "dxw/repo",
     "repositoryTopics" => {
-      "nodes" =>[]
+      "nodes" => []
     },
     "vulnerabilityAlerts" => {
       "nodes" => [valid_securityVulnerability]
@@ -73,7 +71,7 @@ def repo_with_topics
   {
     "nameWithOwner" => "dxw/repo",
     "repositoryTopics" => {
-      "nodes" =>[other_topic]
+      "nodes" => [other_topic]
     },
     "vulnerabilityAlerts" => {
       "nodes" => [valid_securityVulnerability]
@@ -85,7 +83,7 @@ def repo_with_govpress_topic
   {
     "nameWithOwner" => "dxw/repo",
     "repositoryTopics" => {
-      "nodes" =>[other_topic, govpress_topic]
+      "nodes" => [other_topic, govpress_topic]
     },
     "vulnerabilityAlerts" => {
       "nodes" => [valid_securityVulnerability]
@@ -117,7 +115,7 @@ def securityVulnerability_with_missing_attribute
       },
       "vulnerableVersionRange" => "A range of things",
       "firstPatchedVersion" => {
-        "identifier" =>  "IDENTIFIER"
+        "identifier" => "IDENTIFIER"
       }
     }
   }
@@ -131,12 +129,11 @@ def valid_securityVulnerability
       },
       "vulnerableVersionRange" => "A range of things",
       "firstPatchedVersion" => {
-        "identifier" =>  "IDENTIFIER"
+        "identifier" => "IDENTIFIER"
       }
     },
     "securityAdvisory" => {
       "summary" => "This is the summary"
-      }
+    }
   }
 end
-
