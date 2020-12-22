@@ -37,7 +37,8 @@ class GitHub
 
   def fetch_vulnerable_repos(repositories)
     vulnerable_repos = repositories.select do |repo|
-      next if repo['vulnerabilityAlerts']['nodes'].empty?
+      next if repo.dig('repositoryTopics', 'nodes').select{|node| node['topic'].has_value?("govpress")}.any?
+      next if repo.dig('vulnerabilityAlerts', 'nodes').empty?
 
       repo['vulnerabilityAlerts']['nodes'].detect { |v| v['dismissedAt'].nil? }
     end
@@ -84,7 +85,7 @@ class GitHub
     pagination_params += "after: \"#{cursor}\"" if cursor
 
     query = <<-GRAPHQL
-      query {
+      query vunerableRepos {
         organization(login: \"#{ORGANIZATION_NAME}\") {
           repositories(#{pagination_params}) {
             pageInfo {
@@ -94,6 +95,13 @@ class GitHub
             }
             nodes {
               nameWithOwner
+              repositoryTopics(first: 10) {
+                nodes {
+                  topic {
+                    name
+                  }
+                }
+              }
               vulnerabilityAlerts(first: 100) {
                 nodes {
                   dismissedAt
