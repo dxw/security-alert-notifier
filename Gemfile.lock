@@ -32,9 +32,11 @@ GEM
 
 PLATFORMS
   ruby
+  universal-darwin-19
+  x86_64-darwin-19
 
 DEPENDENCIES
   standardrb
 
 BUNDLED WITH
-   1.17.2
+   2.2.2
