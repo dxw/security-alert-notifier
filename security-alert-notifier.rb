@@ -32,12 +32,13 @@ class GitHub
   BASE_URI = 'https://api.github.com/graphql'.freeze
 
   def vulnerable_repos
-    @vulnerable_repos ||= fetch_vulnerable_repos
+    @vulnerable_repos ||= fetch_vulnerable_repos(repositories)
   end
 
-  def fetch_vulnerable_repos
+  def fetch_vulnerable_repos(repositories)
     vulnerable_repos = repositories.select do |repo|
-      next if repo['vulnerabilityAlerts']['nodes'].empty?
+      next if has_govpress_topic?(repo.dig('repositoryTopics', 'nodes'))
+      next if has_no_vulnerabilityAlerts?(repo.dig('vulnerabilityAlerts', 'nodes'))
 
       repo['vulnerabilityAlerts']['nodes'].detect { |v| v['dismissedAt'].nil? }
     end
@@ -60,6 +61,15 @@ class GitHub
   end
 
   private
+
+  def has_govpress_topic?(topics)
+    return false if topics.empty?
+    topics.select{|node| node['topic'].has_value?("govpress")}.any?
+  end
+
+  def has_no_vulnerabilityAlerts?(alerts)
+    return alerts.empty?
+  end
 
   def repositories
     cursor = nil
@@ -84,7 +94,7 @@ class GitHub
     pagination_params += "after: \"#{cursor}\"" if cursor
 
     query = <<-GRAPHQL
-      query {
+      query vunerableRepos {
         organization(login: \"#{ORGANIZATION_NAME}\") {
           repositories(#{pagination_params}) {
             pageInfo {
@@ -94,6 +104,13 @@ class GitHub
             }
             nodes {
               nameWithOwner
+              repositoryTopics(first: 10) {
+                nodes {
+                  topic {
+                    name
+                  }
+                }
+              }
               vulnerabilityAlerts(first: 100) {
                 nodes {
                   dismissedAt
