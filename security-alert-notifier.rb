@@ -18,6 +18,10 @@ parser = OptionParser.new { |opts|
     options[:token] = t
   end
 
+  opts.on("-f", "--filter FILTER", "A regex to filter repositories") do |f|
+    options[:filter] = f
+  end
+
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
@@ -177,17 +181,33 @@ if $PROGRAM_NAME == __FILE__
     github = GitHub.new
 
     if github.vulnerable_repos.any?
-      total_vulnerabilities = github.vulnerable_repos.sum { |repo| repo.alerts.length }
-      puts "WARNING: #{total_vulnerabilities} vulnerabilities in #{github.vulnerable_repos.length} repos"
+      if options[:filter].nil?
+        total_vulnerabilities = github.vulnerable_repos.sum { |repo| repo.alerts.length }
+        vulnerable_repo_count = github.vulnerable_repos.length
+      else
+        total_vulnerabilities = 0
+        vulnerable_repo_count = 0
+        github.vulnerable_repos.each do |repo|
+          if options[:filter].nil? || repo.url =~ /#{options[:filter]}/
+            vulnerable_repo_count = vulnerable_repo_count + 1
+            repo.alerts.each do |alert|
+              total_vulnerabilities = total_vulnerabilities + 1
+            end
+          end
+        end
+      end
+      puts "WARNING: #{total_vulnerabilities} vulnerabilities in #{vulnerable_repo_count} repos"
 
       github.vulnerable_repos.each do |repo|
-        puts repo.url
+        if options[:filter].nil? || repo.url =~ /#{options[:filter]}/
+          puts repo.url
 
-        repo.alerts.each do |alert|
-          puts "  #{alert.package_name} (#{alert.affected_range})"
-          puts "  Fixed in: #{alert.fixed_in}"
-          puts "  Details: #{alert.details}"
-          puts
+          repo.alerts.each do |alert|
+            puts "  #{alert.package_name} (#{alert.affected_range})"
+            puts "  Fixed in: #{alert.fixed_in}"
+            puts "  Details: #{alert.details}"
+            puts
+          end
         end
       end
 
