@@ -1,8 +1,9 @@
-name: CI
-on: [push]
+on:
+  - push
+  - pull_request
+
 jobs:
   lint:
-    name: Lint with standardrb
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -13,7 +14,6 @@ jobs:
       - run: bundle install
       - run: bundle exec standardrb
   test:
-    name: Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
