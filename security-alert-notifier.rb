@@ -211,7 +211,11 @@ if $PROGRAM_NAME == __FILE__
         end
       end
 
-      exit 1
+      if vulnerable_repo_count == 0
+        exit 0
+      else
+        exit 1
+      end
     else
       puts "OK: No vulnerabilities"
       exit 0
