@@ -196,6 +196,12 @@ if $PROGRAM_NAME == __FILE__
           end
         end
       end
+
+      if vulnerable_repo_count == 0
+        puts "OK: No vulnerabilities"
+        exit 0
+      end
+
       puts "WARNING: #{total_vulnerabilities} vulnerabilities in #{vulnerable_repo_count} repos"
 
       github.vulnerable_repos.each do |repo|
