@@ -46,7 +46,9 @@ class GitHub
 
       repo["vulnerabilityAlerts"]["nodes"].detect { |v| v["dismissedAt"].nil? }
     }
-    build_repository_alerts(vulnerable_repos) if vulnerable_repos.any?
+    return [] unless vulnerable_repos.any?
+
+    build_repository_alerts(vulnerable_repos)
   end
 
   def build_repository_alerts(vulnerable_repos)
