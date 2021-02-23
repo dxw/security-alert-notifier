@@ -22,7 +22,7 @@ describe GitHub do
     it "is not included in the list" do
       github = GitHub.new
       result = github.fetch_vulnerable_repos([repo_with_govpress_topic])
-      _(result).must_be_nil
+      _(result).must_equal []
     end
   end
 
@@ -51,6 +51,21 @@ describe GitHub do
       _(result.affected_range).must_equal "A range of things"
       _(result.fixed_in).must_equal "IDENTIFIER"
       _(result.details).must_equal "This is the summary"
+    end
+  end
+
+  describe "when there are no repos" do
+    it "returns an empty array" do
+      github = GitHub.new
+      github.fetch_vulnerable_repos([]).must_equal []
+    end
+  end
+
+  describe "when there are no repos with alerts" do
+    it "returns an empty array" do
+      github = GitHub.new
+      result = github.fetch_vulnerable_repos([repo_without_alerts])
+      _(result).must_equal []
     end
   end
 end
@@ -134,6 +149,18 @@ def valid_securityVulnerability
     },
     "securityAdvisory" => {
       "summary" => "This is the summary"
+    }
+  }
+end
+
+def repo_without_alerts
+  {
+    "nameWithOwner" => "dxw/repo",
+    "repositoryTopics" => {
+      "nodes" => [other_topic]
+    },
+    "vulnerabilityAlerts" => {
+      "nodes" => []
     }
   }
 end
