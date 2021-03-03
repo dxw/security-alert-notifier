@@ -26,6 +26,30 @@ describe GitHub do
     end
   end
 
+  describe "when the repository has no dismissed alerts" do
+    it "is included in the list" do
+      github = GitHub.new
+      result = github.fetch_vulnerable_repos([repo_with_no_topics])
+      _(result.size).must_equal 1
+    end
+  end
+
+  describe "when the repository has only dismissed alerts" do
+    it "is not included in the list" do
+      github = GitHub.new
+      result = github.fetch_vulnerable_repos([repo_with_only_dismissed_alerts])
+      _(result.size).must_equal 0
+    end
+  end
+
+  describe "when the repository has some active alerts and some dismissed alerts" do
+    it "is included in the list" do
+      github = GitHub.new
+      result = github.fetch_vulnerable_repos([repo_with_active_and_dismissed_alerts])
+      _(result.size).must_equal 1
+    end
+  end
+
   describe "when a vulnerability alert does not have the attribute" do
     it "does not blow up" do
       github = GitHub.new
@@ -153,6 +177,24 @@ def valid_securityVulnerability
   }
 end
 
+def dismissed_securityVulnerability
+  {
+    "dismissedAt" => "2021-01-01T-15:50+00",
+    "securityVulnerability" => {
+      "package" => {
+        "name" => "Package Name"
+      },
+      "vulnerableVersionRange" => "A range of things",
+      "firstPatchedVersion" => {
+        "identifier" => "IDENTIFIER"
+      }
+    },
+    "securityAdvisory" => {
+      "summary" => "This is the summary"
+    }
+  }
+end
+
 def repo_without_alerts
   {
     "nameWithOwner" => "dxw/repo",
@@ -161,6 +203,30 @@ def repo_without_alerts
     },
     "vulnerabilityAlerts" => {
       "nodes" => []
+    }
+  }
+end
+
+def repo_with_only_dismissed_alerts
+  {
+    "nameWithOwner" => "dxw/repo",
+    "repositoryTopics" => {
+      "nodes" => []
+    },
+    "vulnerabilityAlerts" => {
+      "nodes" => [dismissed_securityVulnerability]
+    }
+  }
+end
+
+def repo_with_active_and_dismissed_alerts
+  {
+    "nameWithOwner" => "dxw/repo",
+    "repositoryTopics" => {
+      "nodes" => []
+    },
+    "vulnerabilityAlerts" => {
+      "nodes" => [valid_securityVulnerability, dismissed_securityVulnerability]
     }
   }
 end
