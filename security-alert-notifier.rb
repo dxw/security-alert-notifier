@@ -31,7 +31,7 @@ parser = OptionParser.new { |opts|
 class GitHub
   Result = Struct.new(:repos, :cursor, :more?)
   Repo = Struct.new(:url, :alerts)
-  Alert = Struct.new(:package_name, :affected_range, :fixed_in, :details)
+  Alert = Struct.new(:package_name, :affected_range, :fixed_in, :details, :created_at)
 
   BASE_URI = "https://api.github.com/graphql".freeze
 
@@ -58,7 +58,8 @@ class GitHub
           Alert.new(alert.dig("securityVulnerability", "package", "name"),
             alert.dig("securityVulnerability", "vulnerableVersionRange"),
             alert.dig("securityVulnerability", "firstPatchedVersion", "identifier"),
-            alert.dig("securityAdvisory", "summary"))
+            alert.dig("securityAdvisory", "summary"),
+            alert.dig("createdAt"))
         end
       }
 
@@ -121,6 +122,7 @@ class GitHub
               }
               vulnerabilityAlerts(first: 100) {
                 nodes {
+                  createdAt
                   dismissedAt
                   securityAdvisory {
                     summary
@@ -214,6 +216,7 @@ if $PROGRAM_NAME == __FILE__
 
           repo.alerts.each do |alert|
             puts "  #{alert.package_name} (#{alert.affected_range})"
+            puts "  Created at: #{alert.created_at}"
             puts "  Fixed in: #{alert.fixed_in}"
             puts "  Details: #{alert.details}"
             puts
