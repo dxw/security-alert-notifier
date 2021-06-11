@@ -50,6 +50,22 @@ describe GitHub do
     end
   end
 
+  describe "when the repository has old alerts, and we have not filtered by date" do
+    it "is included in the list" do
+      github = GitHub.new
+      result = github.fetch_vulnerable_repos([repo_with_old_alerts])
+      _(result.size).must_equal 1
+    end
+  end
+
+  describe "when the repository has old alerts, and we have filtered by a date after that alert's creation" do
+    it "is not included in the list" do
+      github = GitHub.new("2021-01-01")
+      result = github.fetch_vulnerable_repos([repo_with_old_alerts])
+      _(result.size).must_equal 0
+    end
+  end
+
   describe "when a vulnerability alert does not have the attribute" do
     it "does not blow up" do
       github = GitHub.new
@@ -148,6 +164,7 @@ end
 
 def securityVulnerability_with_missing_attribute
   {
+    "createdAt" => "2021-01-01T-13:00+00",
     "securityVulnerability" => {
       "package" => {
         "name" => "Package Name"
@@ -162,6 +179,7 @@ end
 
 def valid_securityVulnerability
   {
+    "createdAt" => "2021-01-01T-13:00+00",
     "securityVulnerability" => {
       "package" => {
         "name" => "Package Name"
@@ -179,7 +197,26 @@ end
 
 def dismissed_securityVulnerability
   {
+    "createdAt" => "2021-01-01T-13:00+00",
     "dismissedAt" => "2021-01-01T-15:50+00",
+    "securityVulnerability" => {
+      "package" => {
+        "name" => "Package Name"
+      },
+      "vulnerableVersionRange" => "A range of things",
+      "firstPatchedVersion" => {
+        "identifier" => "IDENTIFIER"
+      }
+    },
+    "securityAdvisory" => {
+      "summary" => "This is the summary"
+    }
+  }
+end
+
+def old_securityVulnerability
+  {
+    "createdAt" => "2019-01-01T-13:00+00",
     "securityVulnerability" => {
       "package" => {
         "name" => "Package Name"
@@ -227,6 +264,18 @@ def repo_with_active_and_dismissed_alerts
     },
     "vulnerabilityAlerts" => {
       "nodes" => [valid_securityVulnerability, dismissed_securityVulnerability]
+    }
+  }
+end
+
+def repo_with_old_alerts
+  {
+    "nameWithOwner" => "dxw/repo",
+    "repositoryTopics" => {
+      "nodes" => []
+    },
+    "vulnerabilityAlerts" => {
+      "nodes" => [old_securityVulnerability]
     }
   }
 end

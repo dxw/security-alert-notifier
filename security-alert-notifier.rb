@@ -22,6 +22,10 @@ parser = OptionParser.new { |opts|
     options[:filter] = f
   end
 
+  opts.on("-d", "--date DATE", "An ISO 8601 date to only show alerts created on or after") do |d|
+    options[:date] = d
+  end
+
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
@@ -34,6 +38,10 @@ class GitHub
   Alert = Struct.new(:package_name, :affected_range, :fixed_in, :details, :created_at)
 
   BASE_URI = "https://api.github.com/graphql".freeze
+
+  def initialize(date = nil)
+    @date = date
+  end
 
   def vulnerable_repos
     @vulnerable_repos ||= fetch_vulnerable_repos(repositories)
@@ -48,13 +56,13 @@ class GitHub
     }
     return [] unless vulnerable_repos.any?
 
-    build_repository_alerts(vulnerable_repos)
+    build_repository_alerts(vulnerable_repos).compact
   end
 
   def build_repository_alerts(vulnerable_repos)
     vulnerable_repos.map do |repo|
       alerts = repo.dig("vulnerabilityAlerts", "nodes").map { |alert|
-        if alert.dig("dismissedAt").nil?
+        if alert.dig("dismissedAt").nil? && (@date.nil? || DateTime.parse(alert.dig("createdAt")) > DateTime.iso8601(@date))
           Alert.new(alert.dig("securityVulnerability", "package", "name"),
             alert.dig("securityVulnerability", "vulnerableVersionRange"),
             alert.dig("securityVulnerability", "firstPatchedVersion", "identifier"),
@@ -62,7 +70,7 @@ class GitHub
             alert.dig("createdAt"))
         end
       }
-
+      next unless alerts.any?
       url = "https://github.com/#{repo["nameWithOwner"]}"
 
       Repo.new(url, alerts.compact)
@@ -184,7 +192,7 @@ if $PROGRAM_NAME == __FILE__
   GITHUB_OAUTH_TOKEN = options[:token].freeze
 
   begin
-    github = GitHub.new
+    github = GitHub.new(options[:date])
 
     if github.vulnerable_repos.any?
       if options[:filter].nil?
