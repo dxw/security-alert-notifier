@@ -38,14 +38,30 @@ describe GitHub do
     it "is not included in the list" do
       github = GitHub.new
       result = github.fetch_vulnerable_repos([repo_with_only_dismissed_alerts])
-      _(result.size).must_equal 0
+      _(result).must_equal []
     end
   end
 
-  describe "when the repository has some active alerts and some dismissed alerts" do
+  describe "when the repository has only fixed alerts" do
+    it "is not included in the list" do
+      github = GitHub.new
+      result = github.fetch_vulnerable_repos([repo_with_only_fixed_alerts])
+      _(result).must_equal []
+    end
+  end
+
+  describe "when the repository has only fixed and dismissed alerts" do
+    it "is not included in the list" do
+      github = GitHub.new
+      result = github.fetch_vulnerable_repos([repo_with_only_fixed_and_dismissed_alerts])
+      _(result).must_equal []
+    end
+  end
+
+  describe "when the repository has some active alerts and some fixed and dismissed alerts" do
     it "is included in the list" do
       github = GitHub.new
-      result = github.fetch_vulnerable_repos([repo_with_active_and_dismissed_alerts])
+      result = github.fetch_vulnerable_repos([repo_with_active_and_fixed_and_dismissed_alerts])
       _(result.size).must_equal 1
     end
   end
@@ -195,6 +211,24 @@ def dismissed_securityVulnerability
   }
 end
 
+def fixed_securityVulnerability
+  {
+    "fixedAt" => "2021-01-01T-15:50+00",
+    "securityVulnerability" => {
+      "package" => {
+        "name" => "Package Name"
+      },
+      "vulnerableVersionRange" => "A range of things",
+      "firstPatchedVersion" => {
+        "identifier" => "IDENTIFIER"
+      }
+    },
+    "securityAdvisory" => {
+      "summary" => "This is the summary"
+    }
+  }
+end
+
 def repo_without_alerts
   {
     "nameWithOwner" => "dxw/repo",
@@ -219,14 +253,38 @@ def repo_with_only_dismissed_alerts
   }
 end
 
-def repo_with_active_and_dismissed_alerts
+def repo_with_only_fixed_alerts
   {
     "nameWithOwner" => "dxw/repo",
     "repositoryTopics" => {
       "nodes" => []
     },
     "vulnerabilityAlerts" => {
-      "nodes" => [valid_securityVulnerability, dismissed_securityVulnerability]
+      "nodes" => [fixed_securityVulnerability]
+    }
+  }
+end
+
+def repo_with_only_fixed_and_dismissed_alerts
+  {
+    "nameWithOwner" => "dxw/repo",
+    "repositoryTopics" => {
+      "nodes" => []
+    },
+    "vulnerabilityAlerts" => {
+      "nodes" => [fixed_securityVulnerability, dismissed_securityVulnerability]
+    }
+  }
+end
+
+def repo_with_active_and_fixed_and_dismissed_alerts
+  {
+    "nameWithOwner" => "dxw/repo",
+    "repositoryTopics" => {
+      "nodes" => []
+    },
+    "vulnerabilityAlerts" => {
+      "nodes" => [valid_securityVulnerability, fixed_securityVulnerability, dismissed_securityVulnerability]
     }
   }
 end
