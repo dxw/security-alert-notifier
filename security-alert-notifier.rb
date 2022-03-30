@@ -44,7 +44,7 @@ class GitHub
       next if has_govpress_topic?(repo.dig("repositoryTopics", "nodes"))
       next if has_no_vulnerabilityAlerts?(repo.dig("vulnerabilityAlerts", "nodes"))
 
-      repo["vulnerabilityAlerts"]["nodes"].detect { |v| v["dismissedAt"].nil? }
+      repo["vulnerabilityAlerts"]["nodes"].detect { |v| v["dismissedAt"].nil? && v["fixedAt"].nil? }
     }
     return [] unless vulnerable_repos.any?
 
@@ -54,7 +54,7 @@ class GitHub
   def build_repository_alerts(vulnerable_repos)
     vulnerable_repos.map do |repo|
       alerts = repo.dig("vulnerabilityAlerts", "nodes").map { |alert|
-        if alert.dig("dismissedAt").nil?
+        if alert.dig("dismissedAt").nil? && alert.dig("fixedAt").nil?
           Alert.new(alert.dig("securityVulnerability", "package", "name"),
             alert.dig("securityVulnerability", "vulnerableVersionRange"),
             alert.dig("securityVulnerability", "firstPatchedVersion", "identifier"),
@@ -122,6 +122,7 @@ class GitHub
               vulnerabilityAlerts(first: 100) {
                 nodes {
                   dismissedAt
+                  fixedAt
                   securityAdvisory {
                     summary
                   }
