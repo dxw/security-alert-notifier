@@ -97,7 +97,8 @@ describe GitHub do
   describe "when there are no repos" do
     it "returns an empty array" do
       github = GitHub.new
-      github.fetch_vulnerable_repos([]).must_equal []
+      result = github.fetch_vulnerable_repos([])
+      _(result).must_equal []
     end
   end
 
