@@ -7,9 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-ruby@v1
-        with:
-          ruby-version: 2.5.x
+      - uses: ruby/setup-ruby@v1
       - run: gem install bundler
       - run: bundle install
       - run: bundle exec standardrb
@@ -17,7 +15,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-ruby@v1
-        with:
-          ruby-version: 2.5.x
+      - uses: ruby/setup-ruby@v1
       - run: ruby ./security-alert-notifier_test.rb
