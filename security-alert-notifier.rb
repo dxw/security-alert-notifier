@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+require "csv"
 require "optparse"
 require "net/http"
 require "open-uri"
@@ -20,6 +21,10 @@ parser = OptionParser.new { |opts|
 
   opts.on("-f", "--filter FILTER", "A regex to filter repositories") do |f|
     options[:filter] = f
+  end
+
+  opts.on("-c", "--csv FILE", "Write output to FILE in CSV format") do |c|
+    options[:csv] = c
   end
 
   opts.on("-h", "--help", "Prints this help") do
@@ -209,17 +214,32 @@ if $PROGRAM_NAME == __FILE__
 
       puts "WARNING: #{total_vulnerabilities} vulnerabilities in #{vulnerable_repo_count} repos"
 
+      csv_data = [["Repository", "Package", "Affected range", "Fixed in", "Details"]]
+
       github.vulnerable_repos.each do |repo|
         if options[:filter].nil? || repo.url =~ /#{options[:filter]}/
-          puts repo.url
+          puts repo.url if options[:csv].nil?
 
           repo.alerts.each do |alert|
-            puts "  #{alert.package_name} (#{alert.affected_range})"
-            puts "  Fixed in: #{alert.fixed_in}"
-            puts "  Details: #{alert.details}"
-            puts
+            if options[:csv].nil?
+              puts "  #{alert.package_name} (#{alert.affected_range})"
+              puts "  Fixed in: #{alert.fixed_in}"
+              puts "  Details: #{alert.details}"
+              puts
+            else
+              csv_data.append([repo.url, alert.package_name, alert.affected_range, alert.fixed_in, alert.details])
+            end
           end
         end
+      end
+
+      unless options[:csv].nil?
+        CSV.open(options[:csv], "wb", force_quotes: true, headers: true) do |csv|
+          csv_data.each do |row|
+            csv << row
+          end
+        end
+        puts "Vulnerability data written to: #{options[:csv]}"
       end
 
       exit 1
