@@ -12,7 +12,7 @@ plugin](https://icinga.com/docs/icinga2/latest/doc/05-service-monitoring/#plugin
   with the `repo` scope
 - Run `security-alert-notifier.rb --token <access_token> --organization <organization_name>` and any
   vulnerabilities that haven't been dismissed will be displayed in the console.
-  If there are vulnerabilties then the check will return a "Warning" status, else
+  If there are vulnerabilities then the check will return a "Warning" status, else
   "OK".
 
 ## Tests
