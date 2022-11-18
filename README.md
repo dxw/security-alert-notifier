@@ -31,6 +31,12 @@ Then run the relevant script to setup your environment and install dependencies:
   If there are vulnerabilities then the check will return a "Warning" status, else
   "OK".
 
+If you prefer to receive the results as a CSV file, rather than as text to STDOUT, please run:
+
+```shell
+security-alert-notifier.rb --token <access_token> --organization <organization_name> --csv <filename>
+```
+
 ## Contributing to this repository
 
 To run the standard lint ([`standardrb`](https://github.com/testdouble/standardrb)) and unit tests for this code, run:
