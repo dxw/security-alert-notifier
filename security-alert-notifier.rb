@@ -24,7 +24,11 @@ parser = OptionParser.new { |opts|
     options[:token] = t
   end
 
-  opts.on("-f", "--filter FILTER", "A regex to filter repositories") do |f|
+  opts.on("-e", "--exclude [TOPIC]", Array, "A comma-separated list of repository topics to exclude") do |e|
+    options[:excluded_topics] = e
+  end
+
+  opts.on("-f", "--filter FILTER", "A regex to filter repositories by name") do |f|
     options[:filter] = f
   end
 
@@ -45,13 +49,17 @@ class GitHub
 
   BASE_URI = "https://api.github.com/graphql".freeze
 
+  def initialize(excluded_topics)
+    @excluded_topics = excluded_topics
+  end
+
   def vulnerable_repos
     @vulnerable_repos ||= fetch_vulnerable_repos(repositories)
   end
 
   def fetch_vulnerable_repos(repositories)
     vulnerable_repos = repositories.select { |repo|
-      next if has_govpress_topic?(repo.dig("repositoryTopics", "nodes"))
+      next if has_excluded_topics?(repo.dig("repositoryTopics", "nodes"))
       next if has_no_vulnerabilityAlerts?(repo.dig("vulnerabilityAlerts", "nodes"))
 
       repo["vulnerabilityAlerts"]["nodes"].detect { |v| v["dismissedAt"].nil? && v["fixedAt"].nil? }
@@ -82,9 +90,9 @@ class GitHub
 
   private
 
-  def has_govpress_topic?(topics)
+  def has_excluded_topics?(topics)
     return false if topics.empty?
-    topics.select { |node| node["topic"].has_value?("govpress") }.any?
+    topics.select { |node| @excluded_topics.intersection(node["topic"].values).any? }.any?
   end
 
   def has_no_vulnerabilityAlerts?(alerts)
@@ -197,7 +205,7 @@ if $PROGRAM_NAME == __FILE__
   GITHUB_OAUTH_TOKEN = options[:token].freeze
 
   begin
-    github = GitHub.new
+    github = GitHub.new(options[:excluded_topics].freeze)
 
     if github.vulnerable_repos.any?
       if options[:filter].nil?

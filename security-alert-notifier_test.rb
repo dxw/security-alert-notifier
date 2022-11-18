@@ -4,7 +4,7 @@ require_relative "security-alert-notifier"
 describe GitHub do
   describe "when the repository has no topics" do
     it "is included in the list" do
-      github = GitHub.new
+      github = GitHub.new([])
       result = github.fetch_vulnerable_repos([repo_with_no_topics])
       _(result.size).must_equal 1
     end
@@ -12,7 +12,7 @@ describe GitHub do
 
   describe "when the repository has topics but none are 'govpress'" do
     it "is included in the list" do
-      github = GitHub.new
+      github = GitHub.new(["govpress"])
       result = github.fetch_vulnerable_repos([repo_with_topics])
       _(result.size).must_equal 1
     end
@@ -20,7 +20,7 @@ describe GitHub do
 
   describe "when the repository has topics and one is 'govpress'" do
     it "is not included in the list" do
-      github = GitHub.new
+      github = GitHub.new(["govpress"])
       result = github.fetch_vulnerable_repos([repo_with_govpress_topic])
       _(result).must_equal []
     end
@@ -28,7 +28,7 @@ describe GitHub do
 
   describe "when the repository has no dismissed alerts" do
     it "is included in the list" do
-      github = GitHub.new
+      github = GitHub.new([])
       result = github.fetch_vulnerable_repos([repo_with_no_topics])
       _(result.size).must_equal 1
     end
@@ -36,7 +36,7 @@ describe GitHub do
 
   describe "when the repository has only dismissed alerts" do
     it "is not included in the list" do
-      github = GitHub.new
+      github = GitHub.new([])
       result = github.fetch_vulnerable_repos([repo_with_only_dismissed_alerts])
       _(result).must_equal []
     end
@@ -44,7 +44,7 @@ describe GitHub do
 
   describe "when the repository has only fixed alerts" do
     it "is not included in the list" do
-      github = GitHub.new
+      github = GitHub.new([])
       result = github.fetch_vulnerable_repos([repo_with_only_fixed_alerts])
       _(result).must_equal []
     end
@@ -52,7 +52,7 @@ describe GitHub do
 
   describe "when the repository has only fixed and dismissed alerts" do
     it "is not included in the list" do
-      github = GitHub.new
+      github = GitHub.new([])
       result = github.fetch_vulnerable_repos([repo_with_only_fixed_and_dismissed_alerts])
       _(result).must_equal []
     end
@@ -60,7 +60,7 @@ describe GitHub do
 
   describe "when the repository has some active alerts and some fixed and dismissed alerts" do
     it "is included in the list" do
-      github = GitHub.new
+      github = GitHub.new([])
       result = github.fetch_vulnerable_repos([repo_with_active_and_fixed_and_dismissed_alerts])
       _(result.size).must_equal 1
     end
@@ -68,14 +68,14 @@ describe GitHub do
 
   describe "when a vulnerability alert does not have the attribute" do
     it "does not blow up" do
-      github = GitHub.new
+      github = GitHub.new([])
       vulnerable_repos = [{"vulnerabilityAlerts" => {"nodes" => [securityVulnerability_with_missing_attribute]}}]
       result = github.build_repository_alerts(vulnerable_repos)
       _(result.first).must_be_instance_of GitHub::Repo
     end
 
     it "return nil in the alert for the missin attribute" do
-      github = GitHub.new
+      github = GitHub.new([])
       vulnerable_repos = [{"vulnerabilityAlerts" => {"nodes" => [securityVulnerability_with_missing_attribute]}}]
       result = github.build_repository_alerts(vulnerable_repos).first.alerts.first
       _(result.details).must_be_nil
@@ -84,7 +84,7 @@ describe GitHub do
 
   describe "when the vulnerability is well formed" do
     it "a valid alert" do
-      github = GitHub.new
+      github = GitHub.new([])
       vulnerable_repos = [{"vulnerabilityAlerts" => {"nodes" => [valid_securityVulnerability]}}]
       result = github.build_repository_alerts(vulnerable_repos).first.alerts.first
       _(result.created_at).must_equal "2020-12-19T-13:13+00"
@@ -98,7 +98,7 @@ describe GitHub do
 
   describe "when there are no repos" do
     it "returns an empty array" do
-      github = GitHub.new
+      github = GitHub.new([])
       result = github.fetch_vulnerable_repos([])
       _(result).must_equal []
     end
@@ -106,7 +106,7 @@ describe GitHub do
 
   describe "when there are no repos with alerts" do
     it "returns an empty array" do
-      github = GitHub.new
+      github = GitHub.new([])
       result = github.fetch_vulnerable_repos([repo_without_alerts])
       _(result).must_equal []
     end
