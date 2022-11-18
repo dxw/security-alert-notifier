@@ -108,7 +108,7 @@ class GitHub
 
     query = <<-GRAPHQL
       query vunerableRepos {
-        organization(login: \"#{ORGANIZATION_NAME}\") {
+        organization(login: "#{ORGANIZATION_NAME}") {
           repositories(#{pagination_params}) {
             pageInfo {
               startCursor
