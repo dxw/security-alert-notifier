@@ -24,6 +24,10 @@ parser = OptionParser.new { |opts|
     options[:token] = t
   end
 
+  opts.on("-i", "--include [TOPIC]", Array, "A comma-separated list of repository topics to include") do |i|
+    options[:included_topics] = i
+  end
+
   opts.on("-e", "--exclude [TOPIC]", Array, "A comma-separated list of repository topics to exclude") do |e|
     options[:excluded_topics] = e
   end
@@ -49,8 +53,9 @@ class GitHub
 
   BASE_URI = "https://api.github.com/graphql".freeze
 
-  def initialize(excluded_topics)
-    @excluded_topics = excluded_topics
+  def initialize(included_topics = [], excluded_topics = [])
+    @included_topics = included_topics.nil? ? [] : included_topics
+    @excluded_topics = excluded_topics.nil? ? [] : excluded_topics
   end
 
   def vulnerable_repos
@@ -59,7 +64,7 @@ class GitHub
 
   def fetch_vulnerable_repos(repositories)
     vulnerable_repos = repositories.select { |repo|
-      next if has_excluded_topics?(repo.dig("repositoryTopics", "nodes"))
+      next if has_skippable_topics?(repo.dig("repositoryTopics", "nodes"))
       next if has_no_vulnerabilityAlerts?(repo.dig("vulnerabilityAlerts", "nodes"))
 
       repo["vulnerabilityAlerts"]["nodes"].detect { |v| v["dismissedAt"].nil? && v["fixedAt"].nil? }
@@ -90,9 +95,15 @@ class GitHub
 
   private
 
-  def has_excluded_topics?(topics)
-    return false if topics.empty?
-    topics.select { |node| @excluded_topics.intersection(node["topic"].values).any? }.any?
+  def has_skippable_topics?(repo_topics)
+    return true if @included_topics.any? && !has_filtered_topics?(repo_topics, @included_topics)
+    return true if @excluded_topics.any? && has_filtered_topics?(repo_topics, @excluded_topics)
+    false
+  end
+
+  def has_filtered_topics?(repo_topics, filtered_topics)
+    return false if repo_topics.empty?
+    repo_topics.select { |node| filtered_topics.intersection(node["topic"].values).any? }.any?
   end
 
   def has_no_vulnerabilityAlerts?(alerts)
@@ -205,7 +216,7 @@ if $PROGRAM_NAME == __FILE__
   GITHUB_OAUTH_TOKEN = options[:token].freeze
 
   begin
-    github = GitHub.new(options[:excluded_topics].freeze)
+    github = GitHub.new(options[:included_topics].freeze, options[:excluded_topics].freeze)
 
     if github.vulnerable_repos.any?
       if options[:filter].nil?
