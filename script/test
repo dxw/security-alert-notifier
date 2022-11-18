@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# script/test: Run the test suite for the application.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+if [ -n "$DEBUG" ]; then
+  set -x
+fi
+
+echo "==> Updating..."
+script/update
+
+echo "==> Running ShellCheck..."
+shellcheck script/*
+
+if [ -n "$CI" ]; then
+  echo "==> Linting Ruby..."
+  bundle exec standardrb
+else
+  echo "==> Linting Ruby in fix mode..."
+  bundle exec standardrb --fix
+fi
+
+echo "==> Running the tests..."
+ruby security-alert-notifier_test.rb
