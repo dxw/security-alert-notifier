@@ -38,3 +38,7 @@ To run the standard lint ([`standardrb`](https://github.com/testdouble/standardr
 ```shell
 ./script/test
 ```
+
+For dxw employees, please note that this code is also used downstream in our
+Chef configuration, and any changes you merge in here also need to be reflected there.
+If this isn't clear to you, please speak to a colleague from Ops.
