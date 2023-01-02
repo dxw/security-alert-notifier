@@ -87,6 +87,7 @@ describe GitHub do
       github = GitHub.new
       vulnerable_repos = [{"vulnerabilityAlerts" => {"nodes" => [valid_securityVulnerability]}}]
       result = github.build_repository_alerts(vulnerable_repos).first.alerts.first
+      _(result.created_at).must_equal "2020-12-19T-13:13+00"
       _(result.package_name).must_equal "Package Name"
       _(result.severity).must_equal "CRITICAL"
       _(result.affected_range).must_equal "A range of things"
@@ -181,6 +182,7 @@ end
 
 def valid_securityVulnerability
   {
+    "createdAt" => "2020-12-19T-13:13+00",
     "securityVulnerability" => {
       "package" => {
         "name" => "Package Name"
@@ -199,6 +201,7 @@ end
 
 def dismissed_securityVulnerability
   {
+    "createdAt" => "2020-12-21T-13:17+00",
     "dismissedAt" => "2021-01-01T-15:50+00",
     "securityVulnerability" => {
       "package" => {
@@ -218,6 +221,7 @@ end
 
 def fixed_securityVulnerability
   {
+    "createdAt" => "2020-12-20T-14:31+00",
     "fixedAt" => "2021-01-01T-15:50+00",
     "securityVulnerability" => {
       "package" => {
