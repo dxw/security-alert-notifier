@@ -36,7 +36,7 @@ parser = OptionParser.new { |opts|
 class GitHub
   Result = Struct.new(:repos, :cursor, :more?)
   Repo = Struct.new(:url, :alerts)
-  Alert = Struct.new(:package_name, :affected_range, :fixed_in, :details)
+  Alert = Struct.new(:package_name, :affected_range, :severity, :fixed_in, :details)
 
   BASE_URI = "https://api.github.com/graphql".freeze
 
@@ -62,6 +62,7 @@ class GitHub
         if alert.dig("dismissedAt").nil? && alert.dig("fixedAt").nil?
           Alert.new(alert.dig("securityVulnerability", "package", "name"),
             alert.dig("securityVulnerability", "vulnerableVersionRange"),
+            alert.dig("securityVulnerability", "severity"),
             alert.dig("securityVulnerability", "firstPatchedVersion", "identifier"),
             alert.dig("securityAdvisory", "summary"))
         end
@@ -138,6 +139,7 @@ class GitHub
                     package {
                       name
                     }
+                    severity
                     vulnerableVersionRange
                   }
                 }
@@ -214,7 +216,7 @@ if $PROGRAM_NAME == __FILE__
 
       puts "WARNING: #{total_vulnerabilities} vulnerabilities in #{vulnerable_repo_count} repos"
 
-      csv_data = [["Repository", "Package", "Affected range", "Fixed in", "Details"]]
+      csv_data = [["Repository", "Package", "Severity", "Affected range", "Fixed in", "Details"]]
 
       github.vulnerable_repos.each do |repo|
         if options[:filter].nil? || repo.url =~ /#{options[:filter]}/
@@ -223,11 +225,17 @@ if $PROGRAM_NAME == __FILE__
           repo.alerts.each do |alert|
             if options[:csv].nil?
               puts "  #{alert.package_name} (#{alert.affected_range})"
+              puts "  Severity: #{alert.severity.capitalize}"
               puts "  Fixed in: #{alert.fixed_in}"
               puts "  Details: #{alert.details}"
               puts
             else
-              csv_data.append([repo.url, alert.package_name, alert.affected_range, alert.fixed_in, alert.details])
+              csv_data.append([repo.url,
+                alert.package_name,
+                alert.severity.capitalize,
+                alert.affected_range,
+                alert.fixed_in,
+                alert.details])
             end
           end
         end

@@ -88,6 +88,7 @@ describe GitHub do
       vulnerable_repos = [{"vulnerabilityAlerts" => {"nodes" => [valid_securityVulnerability]}}]
       result = github.build_repository_alerts(vulnerable_repos).first.alerts.first
       _(result.package_name).must_equal "Package Name"
+      _(result.severity).must_equal "CRITICAL"
       _(result.affected_range).must_equal "A range of things"
       _(result.fixed_in).must_equal "IDENTIFIER"
       _(result.details).must_equal "This is the summary"
@@ -169,6 +170,7 @@ def securityVulnerability_with_missing_attribute
       "package" => {
         "name" => "Package Name"
       },
+      "severity" => "HIGH",
       "vulnerableVersionRange" => "A range of things",
       "firstPatchedVersion" => {
         "identifier" => "IDENTIFIER"
@@ -183,6 +185,7 @@ def valid_securityVulnerability
       "package" => {
         "name" => "Package Name"
       },
+      "severity" => "CRITICAL",
       "vulnerableVersionRange" => "A range of things",
       "firstPatchedVersion" => {
         "identifier" => "IDENTIFIER"
@@ -201,6 +204,7 @@ def dismissed_securityVulnerability
       "package" => {
         "name" => "Package Name"
       },
+      "severity" => "LOW",
       "vulnerableVersionRange" => "A range of things",
       "firstPatchedVersion" => {
         "identifier" => "IDENTIFIER"
@@ -219,6 +223,7 @@ def fixed_securityVulnerability
       "package" => {
         "name" => "Package Name"
       },
+      "severity" => "MODERATE",
       "vulnerableVersionRange" => "A range of things",
       "firstPatchedVersion" => {
         "identifier" => "IDENTIFIER"
