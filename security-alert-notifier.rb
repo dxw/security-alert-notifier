@@ -1,10 +1,15 @@
 #!/usr/bin/env ruby
 
 require "csv"
+require "date"
 require "optparse"
 require "net/http"
 require "open-uri"
 require "json"
+
+# We aim to close vulnerability alerts within SLA_IN_DAYS days. In this script,
+# we count all calendar days, including weekends and bank holidays.
+SLA_IN_DAYS = 14
 
 options = {}
 
@@ -36,7 +41,7 @@ parser = OptionParser.new { |opts|
 class GitHub
   Result = Struct.new(:repos, :cursor, :more?)
   Repo = Struct.new(:url, :alerts)
-  Alert = Struct.new(:package_name, :affected_range, :fixed_in, :details)
+  Alert = Struct.new(:package_name, :affected_range, :severity, :created_at, :fixed_in, :details)
 
   BASE_URI = "https://api.github.com/graphql".freeze
 
@@ -62,6 +67,8 @@ class GitHub
         if alert.dig("dismissedAt").nil? && alert.dig("fixedAt").nil?
           Alert.new(alert.dig("securityVulnerability", "package", "name"),
             alert.dig("securityVulnerability", "vulnerableVersionRange"),
+            alert.dig("securityVulnerability", "severity"),
+            alert.dig("createdAt"),
             alert.dig("securityVulnerability", "firstPatchedVersion", "identifier"),
             alert.dig("securityAdvisory", "summary"))
         end
@@ -126,6 +133,7 @@ class GitHub
               }
               vulnerabilityAlerts(first: 100) {
                 nodes {
+                  createdAt
                   dismissedAt
                   fixedAt
                   securityAdvisory {
@@ -138,6 +146,7 @@ class GitHub
                     package {
                       name
                     }
+                    severity
                     vulnerableVersionRange
                   }
                 }
@@ -214,20 +223,30 @@ if $PROGRAM_NAME == __FILE__
 
       puts "WARNING: #{total_vulnerabilities} vulnerabilities in #{vulnerable_repo_count} repos"
 
-      csv_data = [["Repository", "Package", "Affected range", "Fixed in", "Details"]]
+      csv_data = [["Repository", "Package", "Severity", "Calendar days to SLA breach", "Affected range", "Fixed in", "Details"]]
 
       github.vulnerable_repos.each do |repo|
         if options[:filter].nil? || repo.url =~ /#{options[:filter]}/
           puts repo.url if options[:csv].nil?
 
           repo.alerts.each do |alert|
+            time_to_sla_breach = SLA_IN_DAYS - (Date.today - Date.parse(alert.created_at)).to_i
+
             if options[:csv].nil?
               puts "  #{alert.package_name} (#{alert.affected_range})"
+              puts "  Severity: #{alert.severity.capitalize}"
+              puts "  SLA breach in: #{time_to_sla_breach} calendar days"
               puts "  Fixed in: #{alert.fixed_in}"
               puts "  Details: #{alert.details}"
               puts
             else
-              csv_data.append([repo.url, alert.package_name, alert.affected_range, alert.fixed_in, alert.details])
+              csv_data.append([repo.url,
+                alert.package_name,
+                alert.severity.capitalize,
+                time_to_sla_breach,
+                alert.affected_range,
+                alert.fixed_in,
+                alert.details])
             end
           end
         end
