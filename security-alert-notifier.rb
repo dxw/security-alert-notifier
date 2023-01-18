@@ -218,23 +218,24 @@ def print_alert_table(alerts)
         <th style="padding: 4px 6px;">SLA breach (days)</th>
         <th style="padding: 4px 6px;">Fixed in version</th>
         <th style="padding: 4px 6px;">Details</th>
+      </tr>
       </thead>
       <tbody>
   HEREDOC
   alerts.each do |alert|
     puts <<~HEREDOC
-        <tr>
-          <td style="padding: 4px 6px; white-space: pre;">#{CGI.escapeHTML(alert.package_name)} (#{CGI.escapeHTML(alert.affected_range)})</td>
-          <td style="padding: 4px 6px;">#{alert.severity.capitalize}</td>
-          <td style="padding: 4px 6px; white-space: pre;">#{time_to_sla_breach(alert.created_at)}</td>
-          <td style="padding: 4px 6px;">#{alert.fixed_in}</td>
-          <td style="padding: 4px 6px;">#{alert.details}</td>
-        </tr>
+      <tr>
+        <td style="padding: 4px 6px; white-space: pre;">#{CGI.escapeHTML(alert.package_name)} (#{CGI.escapeHTML(alert.affected_range)})</td>
+        <td style="padding: 4px 6px;">#{alert.severity.capitalize}</td>
+        <td style="padding: 4px 6px; white-space: pre;">#{time_to_sla_breach(alert.created_at)}</td>
+        <td style="padding: 4px 6px;">#{alert.fixed_in}</td>
+        <td style="padding: 4px 6px;">#{alert.details}</td>
+      </tr>
     HEREDOC
   end
   puts <<~HEREDOC
-    </tbody>
-  </table>
+      </tbody>
+    </table>
   HEREDOC
 end
 
@@ -296,14 +297,14 @@ if $PROGRAM_NAME == __FILE__
             print_alert_table(repo.alerts)
           elsif !options[:csv].nil?
             repo.alerts.each do |alert|
-                csv_data.append([repo.url,
-                                 alert.package_name,
-                                 alert.severity.capitalize,
-                                 time_to_sla_breach(alert.created_at),
-                                 alert.affected_range,
-                                 alert.fixed_in,
-                                 alert.details])
-              end
+              csv_data.append([repo.url,
+                alert.package_name,
+                alert.severity.capitalize,
+                time_to_sla_breach(alert.created_at),
+                alert.affected_range,
+                alert.fixed_in,
+                alert.details])
+            end
           else
             repo.alerts.each do |alert|
               puts "  #{alert.package_name} (#{alert.affected_range})"
