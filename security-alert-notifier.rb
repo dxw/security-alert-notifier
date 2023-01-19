@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+require "cgi"
 require "csv"
 require "date"
 require "optparse"
@@ -38,6 +39,10 @@ parser = OptionParser.new { |opts|
 
   opts.on("-c", "--csv FILE", "Write output to FILE in CSV format") do |c|
     options[:csv] = c
+  end
+
+  opts.on("-h", "--html", "Write HTML output to STDOUT") do
+    options[:html] = "STDOUT"
   end
 
   opts.on("-h", "--help", "Prints this help") do
@@ -199,6 +204,41 @@ class GitHub
   end
 end
 
+def time_to_sla_breach(alert_created_at)
+  SLA_IN_DAYS - (Date.today - Date.parse(alert_created_at)).to_i
+end
+
+def print_alert_table(alerts)
+  puts <<~HEREDOC
+    <table style="width: 90%; border-collapse: collapse; border-spacing: 5px; display: block; text-align: left;">
+      <thead>
+      <tr>
+        <th style="padding: 4px 6px;">Package</th>
+        <th style="padding: 4px 6px;">Severity</th>
+        <th style="padding: 4px 6px;">SLA breach (days)</th>
+        <th style="padding: 4px 6px;">Fixed in version</th>
+        <th style="padding: 4px 6px;">Details</th>
+      </tr>
+      </thead>
+      <tbody>
+  HEREDOC
+  alerts.each do |alert|
+    puts <<~HEREDOC
+      <tr>
+        <td style="padding: 4px 6px; white-space: pre;">#{CGI.escapeHTML(alert.package_name)} (#{CGI.escapeHTML(alert.affected_range)})</td>
+        <td style="padding: 4px 6px;">#{alert.severity.capitalize}</td>
+        <td style="padding: 4px 6px; white-space: pre;">#{time_to_sla_breach(alert.created_at)}</td>
+        <td style="padding: 4px 6px;">#{alert.fixed_in}</td>
+        <td style="padding: 4px 6px;">#{alert.details}</td>
+      </tr>
+    HEREDOC
+  end
+  puts <<~HEREDOC
+      </tbody>
+    </table>
+  HEREDOC
+end
+
 if $PROGRAM_NAME == __FILE__
   parser.parse!
 
@@ -240,32 +280,39 @@ if $PROGRAM_NAME == __FILE__
         exit 0
       end
 
-      puts "WARNING: #{total_vulnerabilities} vulnerabilities in #{vulnerable_repo_count} repos"
+      if options[:html].nil?
+        puts "WARNING: #{total_vulnerabilities} vulnerabilities in #{vulnerable_repo_count} repos"
+      else
+        puts "<h3>WARNING: #{total_vulnerabilities} vulnerabilities in #{vulnerable_repo_count} repos</h3>"
+      end
 
       csv_data = [["Repository", "Package", "Severity", "Calendar days to SLA breach", "Affected range", "Fixed in", "Details"]]
 
       github.vulnerable_repos.each do |repo|
         if options[:filter].nil? || repo.url =~ /#{options[:filter]}/
-          puts repo.url if options[:csv].nil?
 
-          repo.alerts.each do |alert|
-            time_to_sla_breach = SLA_IN_DAYS - (Date.today - Date.parse(alert.created_at)).to_i
-
-            if options[:csv].nil?
-              puts "  #{alert.package_name} (#{alert.affected_range})"
-              puts "  Severity: #{alert.severity.capitalize}"
-              puts "  SLA breach in: #{time_to_sla_breach} calendar days"
-              puts "  Fixed in: #{alert.fixed_in}"
-              puts "  Details: #{alert.details}"
-              puts
-            else
+          puts repo.url if options[:csv].nil? && options [:html].nil?
+          if !options[:html].nil?
+            puts "<h4><a href=\"#{repo.url}\">#{repo.url}</a></h4>"
+            print_alert_table(repo.alerts)
+          elsif !options[:csv].nil?
+            repo.alerts.each do |alert|
               csv_data.append([repo.url,
                 alert.package_name,
                 alert.severity.capitalize,
-                time_to_sla_breach,
+                time_to_sla_breach(alert.created_at),
                 alert.affected_range,
                 alert.fixed_in,
                 alert.details])
+            end
+          else
+            repo.alerts.each do |alert|
+              puts "  #{alert.package_name} (#{alert.affected_range})"
+              puts "  Severity: #{alert.severity.capitalize}"
+              puts "  SLA breach in: #{time_to_sla_breach(alert.created_at)} calendar days"
+              puts "  Fixed in: #{alert.fixed_in}"
+              puts "  Details: #{alert.details}"
+              puts
             end
           end
         end
