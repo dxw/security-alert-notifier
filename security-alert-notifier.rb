@@ -72,7 +72,7 @@ class GitHub
       next if has_skippable_topics?(repo.dig("repositoryTopics", "nodes"))
       next if has_no_vulnerabilityAlerts?(repo.dig("vulnerabilityAlerts", "nodes"))
 
-      repo["vulnerabilityAlerts"]["nodes"].detect { |v| v["dismissedAt"].nil? && v["fixedAt"].nil? }
+      repo["vulnerabilityAlerts"]["nodes"].detect { |v| alert_is_active?(v) }
     }
     return [] unless vulnerable_repos.any?
 
@@ -82,7 +82,7 @@ class GitHub
   def build_repository_alerts(vulnerable_repos)
     vulnerable_repos.map do |repo|
       alerts = repo.dig("vulnerabilityAlerts", "nodes").map { |alert|
-        if alert.dig("dismissedAt").nil? && alert.dig("fixedAt").nil?
+        if alert_is_active?(alert)
           Alert.new(alert.dig("securityVulnerability", "package", "name"),
             alert.dig("securityVulnerability", "vulnerableVersionRange"),
             alert.dig("securityVulnerability", "severity"),
@@ -99,6 +99,10 @@ class GitHub
   end
 
   private
+
+  def alert_is_active?(alert)
+    alert.dig("dismissedAt").nil? && alert.dig("fixedAt").nil? && alert.dig("autoDismissedAt").nil?
+  end
 
   def has_skippable_topics?(repo_topics)
     return true if @included_topics.any? && !has_filtered_topics?(repo_topics, @included_topics)
@@ -158,6 +162,7 @@ class GitHub
               vulnerabilityAlerts(first: 100) {
                 nodes {
                   createdAt
+                  autoDismissedAt
                   dismissedAt
                   fixedAt
                   securityAdvisory {
