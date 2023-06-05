@@ -66,7 +66,15 @@ describe GitHub do
     end
   end
 
-  describe "when the repository has only fixed and dismissed alerts" do
+  describe "when the repository has only auto-dismissed alerts" do
+    it "is not included in the list" do
+      github = GitHub.new([], [])
+      result = github.fetch_vulnerable_repos([repo_with_only_auto_dismissed_alerts])
+      _(result).must_equal []
+    end
+  end
+
+  describe "when the repository has only fixed and (auto-)dismissed alerts" do
     it "is not included in the list" do
       github = GitHub.new([], [])
       result = github.fetch_vulnerable_repos([repo_with_only_fixed_and_dismissed_alerts])
@@ -235,6 +243,26 @@ def dismissed_securityVulnerability
   }
 end
 
+def auto_dismissed_securityVulnerability
+  {
+    "createdAt" => "2020-12-21T-13:17+00",
+    "autoDismissedAt" => "2021-01-01T-15:50+00",
+    "securityVulnerability" => {
+      "package" => {
+        "name" => "Package Name"
+      },
+      "severity" => "LOW",
+      "vulnerableVersionRange" => "A range of things",
+      "firstPatchedVersion" => {
+        "identifier" => "IDENTIFIER"
+      }
+    },
+    "securityAdvisory" => {
+      "summary" => "This is the summary"
+    }
+  }
+end
+
 def fixed_securityVulnerability
   {
     "createdAt" => "2020-12-20T-14:31+00",
@@ -279,6 +307,18 @@ def repo_with_only_dismissed_alerts
   }
 end
 
+def repo_with_only_auto_dismissed_alerts
+  {
+    "nameWithOwner" => "dxw/repo",
+    "repositoryTopics" => {
+      "nodes" => []
+    },
+    "vulnerabilityAlerts" => {
+      "nodes" => [auto_dismissed_securityVulnerability]
+    }
+  }
+end
+
 def repo_with_only_fixed_alerts
   {
     "nameWithOwner" => "dxw/repo",
@@ -298,7 +338,7 @@ def repo_with_only_fixed_and_dismissed_alerts
       "nodes" => []
     },
     "vulnerabilityAlerts" => {
-      "nodes" => [fixed_securityVulnerability, dismissed_securityVulnerability]
+      "nodes" => [fixed_securityVulnerability, dismissed_securityVulnerability, auto_dismissed_securityVulnerability]
     }
   }
 end
@@ -310,7 +350,10 @@ def repo_with_active_and_fixed_and_dismissed_alerts
       "nodes" => []
     },
     "vulnerabilityAlerts" => {
-      "nodes" => [valid_securityVulnerability, fixed_securityVulnerability, dismissed_securityVulnerability]
+      "nodes" => [valid_securityVulnerability,
+        fixed_securityVulnerability,
+        dismissed_securityVulnerability,
+        auto_dismissed_securityVulnerability]
     }
   }
 end
