@@ -6,6 +6,6 @@ jobs:
   lint-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.5.2
+      - uses: actions/checkout@v3.6.0
       - uses: ruby/setup-ruby@v1
       - run: ./script/test
