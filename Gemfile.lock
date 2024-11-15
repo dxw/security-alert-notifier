@@ -12,8 +12,7 @@ GEM
     racc (1.8.0)
     rainbow (3.1.1)
     regexp_parser (2.9.2)
-    rexml (3.3.6)
-      strscan
+    rexml (3.3.9)
     rubocop (1.64.1)
       json (~> 2.3)
       language_server-protocol (>= 3.17.0)
@@ -45,7 +44,6 @@ GEM
       rubocop-performance (~> 1.21.0)
     standardrb (1.0.1)
       standard
-    strscan (3.1.0)
     unicode-display_width (2.5.0)
 
 PLATFORMS
