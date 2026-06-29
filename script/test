@@ -25,4 +25,4 @@ else
 fi
 
 echo "==> Running the tests..."
-ruby security-alert-notifier_test.rb
+bundle exec ruby security-alert-notifier_test.rb
