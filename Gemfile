@@ -13,11 +13,3 @@ group :test do
 end
 
 gem "csv"
-
-group :development do
-  # keep standard as the top-level linter entrypoint; update to latest available
-  gem "standard"
-  # optional, only if explicitly pinned today; otherwise let standard resolve these:
-  # gem "rubocop"
-  # gem "rubocop-ast"
-end
