@@ -2,13 +2,19 @@ GEM
   remote: https://rubygems.org/
   specs:
     ast (2.4.2)
+    csv (3.3.5)
+    drb (2.2.3)
     json (2.7.2)
     language_server-protocol (3.17.0.3)
     lint_roller (1.1.0)
+    minitest (6.0.6)
+      drb (~> 2.0)
+      prism (~> 1.5)
     parallel (1.25.1)
     parser (3.3.4.0)
       ast (~> 2.4.1)
       racc
+    prism (1.9.0)
     racc (1.8.0)
     rainbow (3.1.1)
     regexp_parser (2.9.2)
@@ -53,10 +59,12 @@ PLATFORMS
   x86_64-darwin-19
 
 DEPENDENCIES
+  csv
+  minitest
   standardrb
 
 RUBY VERSION
-   ruby 3.3.4p94
+   ruby 3.4.1p0
 
 BUNDLED WITH
    2.5.11

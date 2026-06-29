@@ -7,3 +7,9 @@ ruby File.read(".ruby-version").strip
 git_source(:github) { |repo_name| "https://github.com/dxw/security-alert-notifier" }
 
 gem "standardrb"
+
+group :test do
+  gem "minitest"
+end
+
+gem "csv"
