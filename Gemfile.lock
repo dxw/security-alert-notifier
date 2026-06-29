@@ -64,7 +64,6 @@ PLATFORMS
 DEPENDENCIES
   csv
   minitest
-  standard
   standardrb
 
 RUBY VERSION
