@@ -4,7 +4,7 @@ GEM
     ast (2.4.3)
     csv (3.3.6)
     drb (2.2.3)
-    json (2.21.1)
+    json (2.21.2)
     language_server-protocol (3.17.0.6)
     lint_roller (1.1.0)
     minitest (6.0.6)
