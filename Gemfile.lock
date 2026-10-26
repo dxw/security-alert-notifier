@@ -4,22 +4,22 @@ GEM
     ast (2.4.3)
     csv (3.3.6)
     drb (2.2.3)
-    json (2.21.1)
+    json (3.1.0)
     language_server-protocol (3.17.0.6)
     lint_roller (1.1.0)
     minitest (6.0.6)
       drb (~> 2.0)
       prism (~> 1.5)
-    parallel (2.1.0)
-    parser (3.3.12.0)
+    parallel (2.3.0)
+    parser (3.3.13.0)
       ast (~> 2.4.1)
       racc
     prism (1.9.0)
     racc (1.8.1)
     rainbow (3.1.1)
-    regexp_parser (2.12.0)
-    rubocop (1.88.2)
-      json (~> 2.3)
+    regexp_parser (2.13.1)
+    rubocop (1.91.0)
+      json (>= 2.3)
       language_server-protocol (~> 3.17.0.2)
       lint_roller (~> 1.1.0)
       parallel (>= 1.10)
@@ -37,10 +37,10 @@ GEM
       rubocop (>= 1.75.0, < 2.0)
       rubocop-ast (>= 1.47.1, < 2.0)
     ruby-progressbar (1.13.0)
-    standard (1.56.0)
+    standard (1.57.0)
       language_server-protocol (~> 3.17.0.2)
       lint_roller (~> 1.0)
-      rubocop (~> 1.88.0)
+      rubocop (~> 1.91.0)
       standard-custom (~> 1.0.0)
       standard-performance (~> 1.8)
     standard-custom (1.0.2)
@@ -51,9 +51,9 @@ GEM
       rubocop-performance (~> 1.26.0)
     standardrb (1.0.1)
       standard
-    unicode-display_width (3.2.0)
-      unicode-emoji (~> 4.1)
-    unicode-emoji (4.2.0)
+    unicode-display_width (3.3.0)
+      unicode-emoji (~> 4.3)
+    unicode-emoji (4.3.0)
 
 PLATFORMS
   arm64-darwin-23
@@ -67,7 +67,7 @@ DEPENDENCIES
   standardrb
 
 RUBY VERSION
-  ruby 4.0.6
+  ruby 4.0.9
 
 BUNDLED WITH
   4.0.15
